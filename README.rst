@@ -4,7 +4,7 @@ eigen3-hdf5
 Easy serialization of C++ `Eigen <http://eigen.tuxfamily.org/>`_
 matrices using HDF5.
 
-Meant to be bare-bones.  Gets me 90% of what I want/need in < 100
+Meant to be bare-bones.  Gets me 90% of what I want/need in < 200
 lines of code.
 
 Isn't powerful.  Doesn't attempt to expose things in a nice way.  (I'm
@@ -66,7 +66,6 @@ MIT license.
 Next steps
 ----------
 
-* Support complex numbers
 * Support more fundamental data types
 
 Thoughts/notes

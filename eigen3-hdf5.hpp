@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cassert>
+#include <complex>
 #include <cstddef>
 #include <stdexcept>
 #include <string>
@@ -17,6 +18,8 @@ namespace EigenHDF5
 
 template <typename T>
 static const H5::DataType * get_datatype (void);
+
+// floating-point types
 
 template <>
 inline const H5::DataType * get_datatype<float> (void)
@@ -36,6 +39,8 @@ inline const H5::DataType * get_datatype<long double> (void)
     return &H5::PredType::NATIVE_LDOUBLE;
 }
 
+// integer types
+
 template <>
 inline const H5::DataType * get_datatype<int> (void)
 {
@@ -46,6 +51,43 @@ template <>
 inline const H5::DataType * get_datatype<unsigned int> (void)
 {
     return &H5::PredType::NATIVE_UINT;
+}
+
+// complex types
+//
+// inspired by http://www.mail-archive.com/hdf-forum@hdfgroup.org/msg00759.html
+
+template<typename T>
+class ComplexH5Type : public H5::CompType
+{
+public:
+    ComplexH5Type (void)
+        : CompType(sizeof(std::complex<T>))
+        {
+            const H5::DataType * const datatype = get_datatype<T>();
+            assert(datatype->getSize() == sizeof(T));
+            // If we call the members "r" and "i", h5py interprets the
+            // structure correctly as complex numbers.
+            this->insertMember(std::string("r"), 0, *datatype);
+            this->insertMember(std::string("i"), sizeof(T), *datatype);
+            this->pack();
+        }
+
+    const ComplexH5Type<T> * get_singleton (void) const
+        {
+            return singleton;
+        }
+
+private:
+    static ComplexH5Type<T> singleton;
+};
+
+template <>
+inline const H5::DataType * get_datatype<std::complex<double> > (void)
+{
+    typedef double T;
+    static const ComplexH5Type<T> rv;
+    return &rv;
 }
 
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html

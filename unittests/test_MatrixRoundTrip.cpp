@@ -1,3 +1,4 @@
+#include <complex>
 #include <iostream>
 
 #include <Eigen/Dense>
@@ -37,6 +38,23 @@ TEST(MatrixRoundTrip, Int) {
     {
         H5::H5File file("/tmp/test_MatrixRoundTrip_Int.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "int_matrix", mat2);
+    }
+    ASSERT_EQ(mat, mat2);
+}
+
+TEST(MatrixRoundTrip, ComplexDouble) {
+    Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> mat(3, 4), mat2;
+    mat << 1, std::complex<double>(0, 2), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
+#ifdef LOGGING
+    std::cout << mat << std::endl;
+#endif
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_ComplexDouble.h5", H5F_ACC_TRUNC);
+        EigenHDF5::save(file, "complex_matrix", mat);
+    }
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_ComplexDouble.h5", H5F_ACC_RDONLY);
+        EigenHDF5::load(file, "complex_matrix", mat2);
     }
     ASSERT_EQ(mat, mat2);
 }
