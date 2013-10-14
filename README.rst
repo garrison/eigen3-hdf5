@@ -27,6 +27,8 @@ difficult to drop this requirement in the future.
 API
 ---
 
+.. code:: c++
+
     #include <eigen3-hdf5.hpp>
 
     void save_matrix()
