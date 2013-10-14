@@ -16,36 +16,36 @@ namespace EigenHDF5
 {
 
 template <typename T>
-static H5::PredType get_datatype (void);
+static const H5::DataType * get_datatype (void);
 
 template <>
-inline H5::PredType get_datatype<float> (void)
+inline const H5::DataType * get_datatype<float> (void)
 {
-    return H5::PredType::NATIVE_FLOAT;
+    return &H5::PredType::NATIVE_FLOAT;
 }
 
 template <>
-inline H5::PredType get_datatype<double> (void)
+inline const H5::DataType * get_datatype<double> (void)
 {
-    return H5::PredType::NATIVE_DOUBLE;
+    return &H5::PredType::NATIVE_DOUBLE;
 }
 
 template <>
-inline H5::PredType get_datatype<long double> (void)
+inline const H5::DataType * get_datatype<long double> (void)
 {
-    return H5::PredType::NATIVE_LDOUBLE;
+    return &H5::PredType::NATIVE_LDOUBLE;
 }
 
 template <>
-inline H5::PredType get_datatype<int> (void)
+inline const H5::DataType * get_datatype<int> (void)
 {
-    return H5::PredType::NATIVE_INT;
+    return &H5::PredType::NATIVE_INT;
 }
 
 template <>
-inline H5::PredType get_datatype<unsigned int> (void)
+inline const H5::DataType * get_datatype<unsigned int> (void)
 {
-    return H5::PredType::NATIVE_UINT;
+    return &H5::PredType::NATIVE_UINT;
 }
 
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
@@ -60,9 +60,9 @@ void save (H5::H5File &file, const std::string &name, const Eigen::EigenBase<Der
         static_cast<hsize_t>(mat.cols())
     } };
     const H5::DataSpace dataspace(dimensions.size(), dimensions.data());
-    const H5::PredType datatype = get_datatype<Scalar>();
-    H5::DataSet dataset = file.createDataSet(name, datatype, dataspace);
-    dataset.write(row_major_mat.data(), datatype);
+    const H5::DataType * const datatype = get_datatype<Scalar>();
+    H5::DataSet dataset = file.createDataSet(name, *datatype, dataspace);
+    dataset.write(row_major_mat.data(), *datatype);
 }
 
 template <typename Derived>
@@ -81,8 +81,8 @@ void load (const H5::H5File &file, const std::string &name, const Eigen::DenseBa
     dataspace.getSimpleExtentDims(dimensions.data());
     const hsize_t rows = dimensions[0], cols = dimensions[1];
     std::vector<Scalar> data(rows * cols);
-    const H5::PredType datatype = get_datatype<Scalar>();
-    dataset.read(data.data(), datatype, dataspace);
+    const H5::DataType * const datatype = get_datatype<Scalar>();
+    dataset.read(data.data(), *datatype, dataspace);
     // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
     Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
     mat_.derived().resize(rows, cols);
