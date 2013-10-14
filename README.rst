@@ -2,7 +2,7 @@ eigen3-hdf5
 ===========
 
 Easy serialization of C++ `Eigen <http://eigen.tuxfamily.org/>`_
-matrices using HDF5.
+matrices using `HDF5 <http://www.hdfgroup.org/HDF5/>`_.
 
 Meant to be bare-bones.  Gets me 90% of what I want/need in < 200
 lines of code.
@@ -36,14 +36,14 @@ API
         Eigen::Matrix3d mat;
         mat << 1, 2, 3, 4, 5, 6, 7, 8, 9;
         H5::H5File file("filename1.h5", H5F_ACC_TRUNC);
-        EigenHDF5::save(file, "MatrixName", mat);
+        EigenHDF5::save(file, "MatrixDataSetName", mat);
     }
 
     void load_vector()
     {
         Eigen::Vector4i vec;
         H5::H5File file("filename2.h5", H5F_ACC_RDONLY);
-        EigenHDF5::save(file, "VectorName", vec);
+        EigenHDF5::save(file, "VectorDataSetName", vec);
     }
 
 See the `unittests <unittests/>`_ directory for more examples.
