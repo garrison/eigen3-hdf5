@@ -1,0 +1,6 @@
+*.[oa]
+
+/unittests/Makefile
+/unittests/*.make
+/unittests/eigen3-hdf5-tests
+/unittests/obj/
