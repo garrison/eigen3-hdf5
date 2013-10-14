@@ -4,11 +4,8 @@ eigen3-hdf5
 Easy serialization of C++ `Eigen <http://eigen.tuxfamily.org/>`_
 matrices using `HDF5 <http://www.hdfgroup.org/HDF5/>`_.
 
-Meant to be bare-bones.  Gets me 90% of what I want/need in < 200
-lines of code.
-
-Isn't powerful.  Doesn't attempt to expose things in a nice way.  (I'm
-sorry.)
+The library is meant to be bare-bones.  It gets me 90% of what I
+want/need in < 200 lines of code.
 
 Requirements
 ------------
@@ -17,15 +14,19 @@ Requirements
 * HDF5 C++ wrapper library
 * C++11
 
-Because `eigen3-hdf5` is a template library, there is nothing to link
+Because ``eigen3-hdf5`` is a template library, there is nothing to link
 against (besides the HDF5 libraries).
 
 Most of the code is compatible with C++98, but a few C++11 features
-(e.g. `std::array`) are used for additional safety.  It would not be
+(e.g. ``std::array``) are used for additional safety.  It would not be
 difficult to drop this requirement in the future.
 
 API
 ---
+
+Supports saving and restoring Eigen matrices and vectors of ``float``,
+``double``, ``long double``, ``int``, ``unsigned int``, and
+``std::complex<>``.
 
 .. code:: c++
 
