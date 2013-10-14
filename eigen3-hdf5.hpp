@@ -17,54 +17,69 @@ namespace EigenHDF5
 {
 
 template <typename T>
-static const H5::DataType * get_datatype (void);
+struct DatatypeSpecialization;
 
 // floating-point types
 
 template <>
-inline const H5::DataType * get_datatype<float> (void)
+struct DatatypeSpecialization<float>
 {
-    return &H5::PredType::NATIVE_FLOAT;
-}
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_FLOAT;
+        }
+};
 
 template <>
-inline const H5::DataType * get_datatype<double> (void)
+struct DatatypeSpecialization<double>
 {
-    return &H5::PredType::NATIVE_DOUBLE;
-}
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_DOUBLE;
+        }
+};
 
 template <>
-inline const H5::DataType * get_datatype<long double> (void)
+struct DatatypeSpecialization<long double>
 {
-    return &H5::PredType::NATIVE_LDOUBLE;
-}
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_LDOUBLE;
+        }
+};
 
 // integer types
 
 template <>
-inline const H5::DataType * get_datatype<int> (void)
+struct DatatypeSpecialization<int>
 {
-    return &H5::PredType::NATIVE_INT;
-}
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_INT;
+        }
+};
 
 template <>
-inline const H5::DataType * get_datatype<unsigned int> (void)
+struct DatatypeSpecialization<unsigned int>
 {
-    return &H5::PredType::NATIVE_UINT;
-}
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_UINT;
+        }
+};
 
 // complex types
 //
 // inspired by http://www.mail-archive.com/hdf-forum@hdfgroup.org/msg00759.html
 
-template<typename T>
+template <typename T>
 class ComplexH5Type : public H5::CompType
 {
 public:
     ComplexH5Type (void)
         : CompType(sizeof(std::complex<T>))
         {
-            const H5::DataType * const datatype = get_datatype<T>();
+            const H5::DataType * const datatype = DatatypeSpecialization<T>::get();
             assert(datatype->getSize() == sizeof(T));
             // If we call the members "r" and "i", h5py interprets the
             // structure correctly as complex numbers.
@@ -73,22 +88,22 @@ public:
             this->pack();
         }
 
-    const ComplexH5Type<T> * get_singleton (void) const
+    static const ComplexH5Type<T> * get_singleton (void)
         {
-            return singleton;
+            // NOTE: constructing this could be a race condition
+            static ComplexH5Type<T> singleton;
+            return &singleton;
         }
-
-private:
-    static ComplexH5Type<T> singleton;
 };
 
-template <>
-inline const H5::DataType * get_datatype<std::complex<double> > (void)
+template <typename T>
+struct DatatypeSpecialization<std::complex<T> >
 {
-    typedef double T;
-    static const ComplexH5Type<T> rv;
-    return &rv;
-}
+    static inline const H5::DataType * get (void)
+        {
+            return ComplexH5Type<T>::get_singleton();
+        }
+};
 
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
 
@@ -102,7 +117,7 @@ void save (H5::H5File &file, const std::string &name, const Eigen::EigenBase<Der
         static_cast<hsize_t>(mat.cols())
     } };
     const H5::DataSpace dataspace(dimensions.size(), dimensions.data());
-    const H5::DataType * const datatype = get_datatype<Scalar>();
+    const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
     H5::DataSet dataset = file.createDataSet(name, *datatype, dataspace);
     dataset.write(row_major_mat.data(), *datatype);
 }
@@ -123,7 +138,7 @@ void load (const H5::H5File &file, const std::string &name, const Eigen::DenseBa
     dataspace.getSimpleExtentDims(dimensions.data());
     const hsize_t rows = dimensions[0], cols = dimensions[1];
     std::vector<Scalar> data(rows * cols);
-    const H5::DataType * const datatype = get_datatype<Scalar>();
+    const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
     dataset.read(data.data(), *datatype, dataspace);
     // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
     Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
