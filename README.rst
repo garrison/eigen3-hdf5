@@ -43,7 +43,7 @@ API
     {
         Eigen::Vector4i vec;
         H5::H5File file("filename2.h5", H5F_ACC_RDONLY);
-        EigenHDF5::save(file, "VectorDataSetName", vec);
+        EigenHDF5::load(file, "VectorDataSetName", vec);
     }
 
 See the `unittests <unittests/>`_ directory for more examples.
