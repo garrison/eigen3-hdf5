@@ -16,34 +16,34 @@ namespace EigenHDF5
 {
 
 template <typename T>
-H5::PredType get_datatype (void);
+static H5::PredType get_datatype (void);
 
 template <>
-H5::PredType get_datatype<float> (void)
+inline H5::PredType get_datatype<float> (void)
 {
     return H5::PredType::NATIVE_FLOAT;
 }
 
 template <>
-H5::PredType get_datatype<double> (void)
+inline H5::PredType get_datatype<double> (void)
 {
     return H5::PredType::NATIVE_DOUBLE;
 }
 
 template <>
-H5::PredType get_datatype<long double> (void)
+inline H5::PredType get_datatype<long double> (void)
 {
     return H5::PredType::NATIVE_LDOUBLE;
 }
 
 template <>
-H5::PredType get_datatype<int> (void)
+inline H5::PredType get_datatype<int> (void)
 {
     return H5::PredType::NATIVE_INT;
 }
 
 template <>
-H5::PredType get_datatype<unsigned int> (void)
+inline H5::PredType get_datatype<unsigned int> (void)
 {
     return H5::PredType::NATIVE_UINT;
 }
