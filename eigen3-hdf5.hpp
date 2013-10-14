@@ -59,18 +59,18 @@ void save (H5::H5File &file, const std::string &name, const Eigen::EigenBase<Der
         static_cast<hsize_t>(mat.rows()),
         static_cast<hsize_t>(mat.cols())
     } };
-    H5::DataSpace dataspace(dimensions.size(), dimensions.data());
-    H5::PredType datatype = get_datatype<Scalar>();
+    const H5::DataSpace dataspace(dimensions.size(), dimensions.data());
+    const H5::PredType datatype = get_datatype<Scalar>();
     H5::DataSet dataset = file.createDataSet(name, datatype, dataspace);
     dataset.write(row_major_mat.data(), datatype);
 }
 
 template <typename Derived>
-void load (H5::H5File &file, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+void load (const H5::H5File &file, const std::string &name, const Eigen::DenseBase<Derived> &mat)
 {
     typedef typename Derived::Scalar Scalar;
-    H5::DataSet dataset = file.openDataSet(name);
-    H5::DataSpace dataspace = dataset.getSpace();
+    const H5::DataSet dataset = file.openDataSet(name);
+    const H5::DataSpace dataspace = dataset.getSpace();
     const std::size_t ndims = dataspace.getSimpleExtentNdims();
     assert(ndims > 0);
     std::array<hsize_t, 2> dimensions;
