@@ -58,3 +58,26 @@ TEST(MatrixRoundTrip, ComplexDouble) {
     }
     ASSERT_EQ(mat, mat2);
 }
+
+TEST(MatrixRoundTrip, IntBlock) {
+    Eigen::Matrix4i mat(Eigen::Matrix4i::Zero());
+    Eigen::Matrix4i mat2(Eigen::Matrix4i::Zero());
+    mat(0, 0) = 1;
+    mat(0, 1) = 2;
+    mat(1, 0) = 3;
+    mat(1, 1) = 4;
+    mat(2, 2) = 5;
+    mat2(2, 2) = 5;
+#ifdef LOGGING
+    std::cout << mat << std::endl;
+#endif
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_IntBlock.h5", H5F_ACC_TRUNC);
+        EigenHDF5::save(file, "int_block", mat.block(0, 0, 2, 2));
+    }
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_IntBlock.h5", H5F_ACC_RDONLY);
+        EigenHDF5::load(file, "int_block", mat2.block(0, 0, 2, 2));
+    }
+    ASSERT_EQ(mat, mat2);
+}
