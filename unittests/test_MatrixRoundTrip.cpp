@@ -43,7 +43,7 @@ TEST(MatrixRoundTrip, Int) {
 }
 
 TEST(MatrixRoundTrip, ComplexDouble) {
-    Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> mat(3, 4), mat2;
+    Eigen::MatrixXcd mat(3, 4), mat2;
     mat << 1, std::complex<double>(0, 2), 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
 #ifdef LOGGING
     std::cout << mat << std::endl;
