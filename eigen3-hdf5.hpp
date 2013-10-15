@@ -108,7 +108,7 @@ struct DatatypeSpecialization<std::complex<T> >
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
 
 template <typename Derived>
-void save (H5::H5File &file, const std::string &name, const Eigen::EigenBase<Derived> &mat)
+void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBase<Derived> &mat)
 {
     typedef typename Derived::Scalar Scalar;
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
@@ -118,15 +118,15 @@ void save (H5::H5File &file, const std::string &name, const Eigen::EigenBase<Der
     } };
     const H5::DataSpace dataspace(dimensions.size(), dimensions.data());
     const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
-    H5::DataSet dataset = file.createDataSet(name, *datatype, dataspace);
+    H5::DataSet dataset = h5group.createDataSet(name, *datatype, dataspace);
     dataset.write(row_major_mat.data(), *datatype);
 }
 
 template <typename Derived>
-void load (const H5::H5File &file, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+void load (const H5::CommonFG &h5group, const std::string &name, const Eigen::DenseBase<Derived> &mat)
 {
     typedef typename Derived::Scalar Scalar;
-    const H5::DataSet dataset = file.openDataSet(name);
+    const H5::DataSet dataset = h5group.openDataSet(name);
     const H5::DataSpace dataspace = dataset.getSpace();
     const std::size_t ndims = dataspace.getSimpleExtentNdims();
     assert(ndims > 0);
