@@ -108,7 +108,7 @@ struct DatatypeSpecialization<std::complex<T> >
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
 
 template <typename Derived>
-void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBase<Derived> &mat)
+void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBase<Derived> &mat, const H5::DSetCreatPropList &plist=H5::DSetCreatPropList::DEFAULT)
 {
     typedef typename Derived::Scalar Scalar;
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
@@ -118,7 +118,7 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
     } };
     const H5::DataSpace dataspace(dimensions.size(), dimensions.data());
     const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
-    H5::DataSet dataset = h5group.createDataSet(name, *datatype, dataspace);
+    H5::DataSet dataset = h5group.createDataSet(name, *datatype, dataspace, plist);
     dataset.write(row_major_mat.data(), *datatype);
 }
 
