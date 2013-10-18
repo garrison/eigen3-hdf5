@@ -68,6 +68,24 @@ struct DatatypeSpecialization<unsigned int>
         }
 };
 
+template <>
+struct DatatypeSpecialization<long>
+{
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_LONG;
+        }
+};
+
+template <>
+struct DatatypeSpecialization<unsigned long>
+{
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_ULONG;
+        }
+};
+
 // complex types
 //
 // inspired by http://www.mail-archive.com/hdf-forum@hdfgroup.org/msg00759.html
