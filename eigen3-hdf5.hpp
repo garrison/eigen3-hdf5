@@ -123,6 +123,19 @@ struct DatatypeSpecialization<std::complex<T> >
         }
 };
 
+namespace internal
+{
+    template <typename Derived>
+    H5::DataSpace create_dataspace (const Eigen::EigenBase<Derived> &mat)
+    {
+        const std::array<hsize_t, 2> dimensions = { {
+            static_cast<hsize_t>(mat.rows()),
+            static_cast<hsize_t>(mat.cols())
+        } };
+        return H5::DataSpace(dimensions.size(), dimensions.data());
+    }
+}
+
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
 
 template <typename Derived>
@@ -130,38 +143,78 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
 {
     typedef typename Derived::Scalar Scalar;
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
-    const std::array<hsize_t, 2> dimensions = { {
-        static_cast<hsize_t>(mat.rows()),
-        static_cast<hsize_t>(mat.cols())
-    } };
-    const H5::DataSpace dataspace(dimensions.size(), dimensions.data());
+    const H5::DataSpace dataspace = internal::create_dataspace(mat);
     const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
     H5::DataSet dataset = h5group.createDataSet(name, *datatype, dataspace, plist);
     dataset.write(row_major_mat.data(), *datatype);
 }
 
 template <typename Derived>
-void load (const H5::CommonFG &h5group, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+void save_attribute (H5::H5Object &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
 {
     typedef typename Derived::Scalar Scalar;
-    const H5::DataSet dataset = h5group.openDataSet(name);
-    const H5::DataSpace dataspace = dataset.getSpace();
-    const std::size_t ndims = dataspace.getSimpleExtentNdims();
-    assert(ndims > 0);
-    std::array<hsize_t, 2> dimensions;
-    dimensions[1] = 1; // in case it's 1D
-    if (ndims > dimensions.size()) {
-        throw std::runtime_error("HDF5 array has too many dimensions.");
-    }
-    dataspace.getSimpleExtentDims(dimensions.data());
-    const hsize_t rows = dimensions[0], cols = dimensions[1];
-    std::vector<Scalar> data(rows * cols);
+    const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
+    const H5::DataSpace dataspace = internal::create_dataspace(mat);
     const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
-    dataset.read(data.data(), *datatype, dataspace);
-    // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
-    Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
-    mat_.derived().resize(rows, cols);
-    mat_ = Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(data.data(), rows, cols);
+    H5::Attribute dataset = h5obj.createAttribute(name, *datatype, dataspace);
+    dataset.write(*datatype, row_major_mat.data());
+}
+
+namespace internal
+{
+    // H5::Attribute and H5::DataSet both have similar API's, and although they
+    // share a common base class, the relevant methods are not virtual.  Worst
+    // of all, they take their arguments in different orders!
+
+    template <typename Scalar>
+    inline void read_data (const H5::DataSet &dataset, Scalar *data, const H5::DataType &datatype)
+    {
+        dataset.read(data, datatype);
+    }
+
+    template <typename Scalar>
+    inline void read_data (const H5::Attribute &dataset, Scalar *data, const H5::DataType &datatype)
+    {
+        dataset.read(datatype, data);
+    }
+
+    template <typename Derived, typename DataSet>
+    void _load (const DataSet &dataset, const Eigen::DenseBase<Derived> &mat)
+    {
+        typedef typename Derived::Scalar Scalar;
+        const H5::DataSpace dataspace = dataset.getSpace();
+        const std::size_t ndims = dataspace.getSimpleExtentNdims();
+        assert(ndims > 0);
+        std::array<hsize_t, 2> dimensions;
+        dimensions[1] = 1; // in case it's 1D
+        if (ndims > dimensions.size()) {
+            throw std::runtime_error("HDF5 array has too many dimensions.");
+        }
+        dataspace.getSimpleExtentDims(dimensions.data());
+        const hsize_t rows = dimensions[0], cols = dimensions[1];
+        std::vector<Scalar> data(rows * cols);
+        const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
+        internal::read_data(dataset, data.data(), *datatype);
+        // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
+        Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
+        mat_.derived().resize(rows, cols);
+        mat_ = Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(data.data(), rows, cols);
+    }
+
+}
+
+template <typename Derived>
+void load (const H5::CommonFG &h5group, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+{
+    const H5::DataSet dataset = h5group.openDataSet(name);
+    internal::_load(dataset, mat);
+}
+
+template <typename Derived>
+void load_attribute (const H5::H5Object &h5obj, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+{
+    const H5::Attribute dataset = h5obj.openAttribute(name);
+    internal::_load(dataset, mat);
 }
 
 } // namespace EigenHDF5
