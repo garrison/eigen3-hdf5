@@ -11,7 +11,7 @@ Requirements
 ------------
 
 * Eigen3 (tested on 3.1 and 3.2 branches)
-* HDF5 C++ wrapper library
+* HDF5 C++ wrapper library >= 1.8.12
 * C++11
 
 Because ``eigen3-hdf5`` is a template library, there is nothing to link

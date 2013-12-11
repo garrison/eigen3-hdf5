@@ -123,6 +123,52 @@ struct DatatypeSpecialization<std::complex<T> >
         }
 };
 
+// string types, to be used mainly for attributes
+
+template <>
+struct DatatypeSpecialization<const char *>
+{
+    static inline const H5::DataType * get (void)
+        {
+            static const H5::StrType strtype(0, H5T_VARIABLE);
+            return &strtype;
+        }
+};
+
+template <>
+struct DatatypeSpecialization<char *>
+{
+    static inline const H5::DataType * get (void)
+        {
+            static const H5::StrType strtype(0, H5T_VARIABLE);
+            return &strtype;
+        }
+};
+
+// XXX: for some unknown reason the following two functions segfault if
+// H5T_VARIABLE is used.  The passed strings should still be null-terminated,
+// so this is a bit worrisome.
+
+template <std::size_t N>
+struct DatatypeSpecialization<const char [N]>
+{
+    static inline const H5::DataType * get (void)
+        {
+            static const H5::StrType strtype(0, N);
+            return &strtype;
+        }
+};
+
+template <std::size_t N>
+struct DatatypeSpecialization<char [N]>
+{
+    static inline const H5::DataType * get (void)
+        {
+            static const H5::StrType strtype(0, N);
+            return &strtype;
+        }
+};
+
 namespace internal
 {
     template <typename Derived>
@@ -134,6 +180,21 @@ namespace internal
         } };
         return H5::DataSpace(dimensions.size(), dimensions.data());
     }
+}
+
+template <typename T>
+void save_attribute (H5::H5Location &h5obj, const std::string &name, const T &value)
+{
+    const H5::DataType * const datatype = DatatypeSpecialization<T>::get();
+    H5::DataSpace dataspace(H5S_SCALAR);
+    H5::Attribute att = h5obj.createAttribute(name, *datatype, dataspace);
+    att.write(*datatype, &value);
+}
+
+template <>
+inline void save_attribute (H5::H5Location &h5obj, const std::string &name, const std::string &value)
+{
+    save_attribute(h5obj, name, value.c_str());
 }
 
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
@@ -150,7 +211,7 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
 }
 
 template <typename Derived>
-void save_attribute (H5::H5Object &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
+void save_attribute (H5::H5Location &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
 {
     typedef typename Derived::Scalar Scalar;
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
@@ -211,7 +272,7 @@ void load (const H5::CommonFG &h5group, const std::string &name, const Eigen::De
 }
 
 template <typename Derived>
-void load_attribute (const H5::H5Object &h5obj, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+void load_attribute (const H5::H5Location &h5obj, const std::string &name, const Eigen::DenseBase<Derived> &mat)
 {
     const H5::Attribute dataset = h5obj.openAttribute(name);
     internal::_load(dataset, mat);
