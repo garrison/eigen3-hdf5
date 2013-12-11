@@ -183,7 +183,7 @@ namespace internal
 }
 
 template <typename T>
-void save_scalar_attribute (H5::H5Location &h5obj, const std::string &name, const T &value)
+void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name, const T &value)
 {
     const H5::DataType * const datatype = DatatypeSpecialization<T>::get();
     H5::DataSpace dataspace(H5S_SCALAR);
@@ -192,7 +192,7 @@ void save_scalar_attribute (H5::H5Location &h5obj, const std::string &name, cons
 }
 
 template <>
-inline void save_scalar_attribute (H5::H5Location &h5obj, const std::string &name, const std::string &value)
+inline void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name, const std::string &value)
 {
     save_scalar_attribute(h5obj, name, value.c_str());
 }
@@ -211,7 +211,7 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
 }
 
 template <typename Derived>
-void save_attribute (H5::H5Location &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
+void save_attribute (const H5::H5Location &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
 {
     typedef typename Derived::Scalar Scalar;
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
