@@ -183,7 +183,7 @@ namespace internal
 }
 
 template <typename T>
-void save_attribute (H5::H5Location &h5obj, const std::string &name, const T &value)
+void save_scalar_attribute (H5::H5Location &h5obj, const std::string &name, const T &value)
 {
     const H5::DataType * const datatype = DatatypeSpecialization<T>::get();
     H5::DataSpace dataspace(H5S_SCALAR);
@@ -192,9 +192,9 @@ void save_attribute (H5::H5Location &h5obj, const std::string &name, const T &va
 }
 
 template <>
-inline void save_attribute (H5::H5Location &h5obj, const std::string &name, const std::string &value)
+inline void save_scalar_attribute (H5::H5Location &h5obj, const std::string &name, const std::string &value)
 {
-    save_attribute(h5obj, name, value.c_str());
+    save_scalar_attribute(h5obj, name, value.c_str());
 }
 
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
