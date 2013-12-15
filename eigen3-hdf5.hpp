@@ -51,6 +51,24 @@ struct DatatypeSpecialization<long double>
 // integer types
 
 template <>
+struct DatatypeSpecialization<short>
+{
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_SHORT;
+        }
+};
+
+template <>
+struct DatatypeSpecialization<unsigned short>
+{
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_USHORT;
+        }
+};
+
+template <>
 struct DatatypeSpecialization<int>
 {
     static inline const H5::DataType * get (void)
@@ -83,6 +101,24 @@ struct DatatypeSpecialization<unsigned long>
     static inline const H5::DataType * get (void)
         {
             return &H5::PredType::NATIVE_ULONG;
+        }
+};
+
+template <>
+struct DatatypeSpecialization<long long>
+{
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_LLONG;
+        }
+};
+
+template <>
+struct DatatypeSpecialization<unsigned long long>
+{
+    static inline const H5::DataType * get (void)
+        {
+            return &H5::PredType::NATIVE_ULLONG;
         }
 };
 

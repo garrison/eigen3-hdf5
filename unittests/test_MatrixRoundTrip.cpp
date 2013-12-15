@@ -25,6 +25,23 @@ TEST(MatrixRoundTrip, Double) {
     ASSERT_EQ(mat, mat2);
 }
 
+TEST(MatrixRoundTrip, LongDouble) {
+    Eigen::Matrix<long double, Eigen::Dynamic, Eigen::Dynamic> mat(3, 4), mat2;
+    mat << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
+#ifdef LOGGING
+    std::cout << mat << std::endl;
+#endif
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_LongDouble.h5", H5F_ACC_TRUNC);
+        EigenHDF5::save(file, "longdouble_matrix", mat);
+    }
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_LongDouble.h5", H5F_ACC_RDONLY);
+        EigenHDF5::load(file, "longdouble_matrix", mat2);
+    }
+    ASSERT_EQ(mat, mat2);
+}
+
 TEST(MatrixRoundTrip, Int) {
     Eigen::MatrixXi mat(3, 4), mat2;
     mat << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
@@ -38,6 +55,23 @@ TEST(MatrixRoundTrip, Int) {
     {
         H5::H5File file("/tmp/test_MatrixRoundTrip_Int.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "int_matrix", mat2);
+    }
+    ASSERT_EQ(mat, mat2);
+}
+
+TEST(MatrixRoundTrip, ULongLong) {
+    Eigen::Matrix<unsigned long long, Eigen::Dynamic, Eigen::Dynamic> mat(3, 4), mat2;
+    mat << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
+#ifdef LOGGING
+    std::cout << mat << std::endl;
+#endif
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_ULongLong.h5", H5F_ACC_TRUNC);
+        EigenHDF5::save(file, "ull_matrix", mat);
+    }
+    {
+        H5::H5File file("/tmp/test_MatrixRoundTrip_ULongLong.h5", H5F_ACC_RDONLY);
+        EigenHDF5::load(file, "ull_matrix", mat2);
     }
     ASSERT_EQ(mat, mat2);
 }
