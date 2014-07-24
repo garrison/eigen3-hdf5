@@ -1,7 +1,6 @@
 #ifndef _EIGEN3_HDF5_HPP
 #define _EIGEN3_HDF5_HPP
 
-#include <array>
 #include <cassert>
 #include <complex>
 #include <cstddef>
@@ -210,11 +209,12 @@ namespace internal
     template <typename Derived>
     H5::DataSpace create_dataspace (const Eigen::EigenBase<Derived> &mat)
     {
-        const std::array<hsize_t, 2> dimensions = { {
+        const std::size_t dimensions_size = 2;
+        const hsize_t dimensions[dimensions_size] = {
             static_cast<hsize_t>(mat.rows()),
             static_cast<hsize_t>(mat.cols())
-        } };
-        return H5::DataSpace(dimensions.size(), dimensions.data());
+        };
+        return H5::DataSpace(dimensions_size, dimensions);
     }
 }
 
@@ -282,12 +282,13 @@ namespace internal
         const H5::DataSpace dataspace = dataset.getSpace();
         const std::size_t ndims = dataspace.getSimpleExtentNdims();
         assert(ndims > 0);
-        std::array<hsize_t, 2> dimensions;
+        const std::size_t dimensions_size = 2;
+        hsize_t dimensions[dimensions_size];
         dimensions[1] = 1; // in case it's 1D
-        if (ndims > dimensions.size()) {
+        if (ndims > dimensions_size) {
             throw std::runtime_error("HDF5 array has too many dimensions.");
         }
-        dataspace.getSimpleExtentDims(dimensions.data());
+        dataspace.getSimpleExtentDims(dimensions);
         const hsize_t rows = dimensions[0], cols = dimensions[1];
         std::vector<Scalar> data(rows * cols);
         const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();

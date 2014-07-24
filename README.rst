@@ -12,15 +12,11 @@ Requirements
 ------------
 
 * Eigen3 (tested on 3.1 and 3.2 branches)
-* HDF5 C++ wrapper library >= 1.8.12
-* C++11
+* HDF5 C++ wrapper library >= 1.8.12 (yes, this is a very recent
+  version)
 
 Because ``eigen3-hdf5`` is a template library, there is nothing to link
 against (besides the HDF5 libraries).
-
-Most of the code is compatible with C++98, but a few C++11 features
-(e.g. ``std::array``) are used for additional safety.  It would not be
-difficult to drop this requirement in the future.
 
 API
 ---

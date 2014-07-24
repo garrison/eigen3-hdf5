@@ -9,7 +9,7 @@ local gtest_root = _OPTIONS["gtest"] or "/usr/src/gtest"
 solution "eigen3-hdf5-tests"
   configurations { "Local" }
 
-  buildoptions { "-g", "-Wall", "-Wextra", "-std=c++11" }
+  buildoptions { "-g", "-Wall", "-Wextra" }
   includedirs { gtest_root .. "/include" }
   defines { "GTEST_HAS_PTHREAD=0" }
 
