@@ -4,8 +4,9 @@ eigen3-hdf5
 Easy serialization of C++ `Eigen <http://eigen.tuxfamily.org/>`_
 matrices using `HDF5 <http://www.hdfgroup.org/HDF5/>`_.
 
-The library is meant to be bare-bones.  It gets me 90% of what I
-want/need in < 200 lines of code.
+The library is meant to be bare-bones (at least for now).  It gets me
+90% of what I want/need in a few hundred lines of code.  It may also
+get you 90% (or even 100%) of what you need.
 
 Requirements
 ------------
@@ -74,6 +75,6 @@ Thoughts/notes
 
 * Using the HDF5 C++ wrapper library supposedly means it `won't work
   with parallel hdf5
-  <http://www.hdfgroup.org/hdf5-quest.html#p5thread>`_.  Is this
-  likely to matter?
-* Will the HDF5 library always handle endian issues transparently for us?
+  <http://www.hdfgroup.org/hdf5-quest.html#p5thread>`_.  If I were to
+  do it again, I would write ``eigen3-hdf5`` using the regular C HDF5
+  API, not the C++ wrapper.  Patches are welcome. :)
