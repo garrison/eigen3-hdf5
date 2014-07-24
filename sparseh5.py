@@ -13,7 +13,7 @@ def to_sparse_repr(mat):
     return m
 
 def from_sparse_repr(m, shape=None):
-    return coo_matrix((m["v"], (m["r"], m["c"])), shape=shape)
+    return coo_matrix((m["v"], (m["r"], m["c"])), shape=shape).tocsr()
 
 def save_sparse_h5(grp, name, data):
     grp[name] = to_sparse_repr(data)
