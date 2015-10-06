@@ -216,6 +216,34 @@ namespace internal
         };
         return H5::DataSpace(dimensions_size, dimensions);
     }
+
+    // I suspect there is a more optimal way to set up the hyperslab that would avoid
+    // copying row by row, but I do not know what it is right now. 
+    template <typename Derived>
+    void write_mat_by_rows(const Eigen::EigenBase<Derived> &mat, 
+        const H5::DataType * const datatype,
+        H5::DataSet *dataset,
+        const H5::DataSpace* dataspace)
+    {
+        Derived::Index mstride = mat.derived().outerStride();
+
+        // slab params for the file data
+        hsize_t fstride[2] = { 1, mat.cols() };
+        hsize_t count[2] = { 1, 1 };
+        hsize_t block[2] = { 1, mat.cols() };
+
+        // slab params for the memory data
+        hsize_t mdim[2] = { 1, mat.cols() };
+        H5::DataSpace mspace(2, mdim);
+
+        // write each row of mat as a slab
+        for (int i = 0; i < mat.rows(); i++)
+        {
+            hsize_t start[2] = { i, 0 };
+            dataspace->selectHyperslab(H5S_SELECT_SET, count, start, fstride, block);
+            dataset->write(mat.derived().data() + i*mstride, *datatype, mspace, *dataspace);
+        }
+    }
 }
 
 template <typename T>
@@ -239,11 +267,41 @@ template <typename Derived>
 void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBase<Derived> &mat, const H5::DSetCreatPropList &plist=H5::DSetCreatPropList::DEFAULT)
 {
     typedef typename Derived::Scalar Scalar;
-    const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
-    const H5::DataSpace dataspace = internal::create_dataspace(mat);
     const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
+    const H5::DataSpace dataspace = internal::create_dataspace(mat);
     H5::DataSet dataset = h5group.createDataSet(name, *datatype, dataspace, plist);
-    dataset.write(row_major_mat.data(), *datatype);
+
+    bool written = false;  // flag will be true when the data has been written
+    if (mat.derived().Flags & Eigen::RowMajor)
+    {
+        // the matrix is stored in a row major order; see if it is contiguous
+        if (mat.derived().outerStride() == mat.cols())
+        {
+            // the stride between rows is the number of columns means there is no padding between
+            // rows, so the data is contiguous and we can write the data directly from memory
+            // without copying. 
+            dataset.write(mat.derived().data(), *datatype);
+            written = true;
+        }
+        else if (mat.derived().innerStride() == 1)
+        {
+            // inner stride == 1 is a sanity check. Only matrices made with unconventional maps
+            // would have inner stride != 1, and they will be handled below by first copying the
+            // input matrix. 
+
+            // write the matrix by rows to the dataset using the dataspace made above
+            internal::write_mat_by_rows(mat, datatype, &dataset, &dataspace);
+            written = true;
+        }
+    }
+    
+    if (!written)
+    {
+        // data has not yet been written, so there is nothing else to try but copy the input
+        // matrix to a row major matrix and write it. 
+        const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
+        dataset.write(row_major_mat.data(), *datatype);
+    }
 }
 
 template <typename Derived>
@@ -290,15 +348,47 @@ namespace internal
         }
         dataspace.getSimpleExtentDims(dimensions);
         const hsize_t rows = dimensions[0], cols = dimensions[1];
-        std::vector<Scalar> data(rows * cols);
         const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
-        internal::read_data(dataset, data.data(), *datatype);
-        // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
         Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
-        mat_.derived().resize(rows, cols);
-        mat_ = Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(data.data(), rows, cols);
-    }
+        if (mat.Flags & Eigen::RowMajor || dimensions[0] == 1 || dimensions[1] == 1)
+        {
+            mat_.derived().resize(rows, cols);
+            Derived::Index stride = mat_.derived().outerStride();
+            if (stride == cols || (stride == rows && cols == 1))
+            {
+                internal::read_data(dataset, mat_.derived().data(), *datatype);
+            }
+            else
+            {
+                // unnatural stride; read into a temp and copy it
+                Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> temp(rows, cols);
+                internal::read_data(dataset, temp.data(), *datatype);
+                mat_ = temp;
+            }
+        }
+        else
+        {
+            mat_.derived().resize(cols, rows);
+            Derived::Index stride = mat_.derived().outerStride();
+            if (stride == cols)
+            {
+                internal::read_data(dataset, mat_.derived().data(), *datatype);
+            }
+            else
+            {
+                // unnatural stride; read into a temp and copy it
+                Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> temp(cols, rows);
+                internal::read_data(dataset, temp.data(), *datatype);
 
+                // TODO: this transposeIsPlace causes compilation error when loading into a fixed
+                // size matrix. Since it is better to be more general than fast, we need to code a
+                // different solution. 
+                temp.transposeInPlace();
+                mat_ = temp;
+            }
+            mat_.transposeInPlace();
+        }
+    }
 }
 
 template <typename Derived>
