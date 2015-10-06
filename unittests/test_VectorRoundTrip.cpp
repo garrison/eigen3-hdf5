@@ -14,11 +14,11 @@ TEST(VectorRoundTrip, Double) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_VectorRoundTrip_Double.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_VectorRoundTrip_Double.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "double_vector", mat);
     }
     {
-        H5::H5File file("/tmp/test_VectorRoundTrip_Double.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_VectorRoundTrip_Double.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "double_vector", mat2);
     }
     ASSERT_EQ(mat, mat2);
@@ -31,11 +31,11 @@ TEST(VectorRoundTrip, Int) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_VectorRoundTrip_Int.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_VectorRoundTrip_Int.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "int_vector", mat);
     }
     {
-        H5::H5File file("/tmp/test_VectorRoundTrip_Int.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_VectorRoundTrip_Int.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "int_vector", mat2);
     }
     ASSERT_EQ(mat, mat2);

@@ -15,11 +15,11 @@ TEST(MatrixRoundTrip, Double) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_Double.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_MatrixRoundTrip_Double.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "double_matrix", mat);
     }
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_Double.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_MatrixRoundTrip_Double.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "double_matrix", mat2);
     }
     ASSERT_EQ(mat, mat2);
@@ -32,11 +32,11 @@ TEST(MatrixRoundTrip, LongDouble) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_LongDouble.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_MatrixRoundTrip_LongDouble.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "longdouble_matrix", mat);
     }
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_LongDouble.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_MatrixRoundTrip_LongDouble.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "longdouble_matrix", mat2);
     }
     ASSERT_EQ(mat, mat2);
@@ -49,11 +49,11 @@ TEST(MatrixRoundTrip, Int) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_Int.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_MatrixRoundTrip_Int.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "int_matrix", mat);
     }
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_Int.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_MatrixRoundTrip_Int.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "int_matrix", mat2);
     }
     ASSERT_EQ(mat, mat2);
@@ -66,11 +66,11 @@ TEST(MatrixRoundTrip, ULongLong) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_ULongLong.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_MatrixRoundTrip_ULongLong.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "ull_matrix", mat);
     }
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_ULongLong.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_MatrixRoundTrip_ULongLong.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "ull_matrix", mat2);
     }
     ASSERT_EQ(mat, mat2);
@@ -83,11 +83,11 @@ TEST(MatrixRoundTrip, ComplexDouble) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_ComplexDouble.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_MatrixRoundTrip_ComplexDouble.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "complex_matrix", mat);
     }
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_ComplexDouble.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_MatrixRoundTrip_ComplexDouble.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "complex_matrix", mat2);
     }
     ASSERT_EQ(mat, mat2);
@@ -106,11 +106,11 @@ TEST(MatrixRoundTrip, IntBlock) {
     std::cout << mat << std::endl;
 #endif
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_IntBlock.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_MatrixRoundTrip_IntBlock.h5", H5F_ACC_TRUNC);
         EigenHDF5::save(file, "int_block", mat.block(0, 0, 2, 2));
     }
     {
-        H5::H5File file("/tmp/test_MatrixRoundTrip_IntBlock.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_MatrixRoundTrip_IntBlock.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "int_block", mat2.block(0, 0, 2, 2));
     }
     ASSERT_EQ(mat, mat2);
