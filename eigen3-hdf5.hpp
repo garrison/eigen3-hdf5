@@ -350,43 +350,27 @@ namespace internal
         const hsize_t rows = dimensions[0], cols = dimensions[1];
         const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
         Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
+        bool written = false;
         if (mat.Flags & Eigen::RowMajor || dimensions[0] == 1 || dimensions[1] == 1)
         {
+            // mat is already row major; resize it and read into it
             mat_.derived().resize(rows, cols);
             Derived::Index stride = mat_.derived().outerStride();
             if (stride == cols || (stride == rows && cols == 1))
             {
+                // mat has natural stride, so read directly into its data block
                 internal::read_data(dataset, mat_.derived().data(), *datatype);
-            }
-            else
-            {
-                // unnatural stride; read into a temp and copy it
-                Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> temp(rows, cols);
-                internal::read_data(dataset, temp.data(), *datatype);
-                mat_ = temp;
+                written = true;
             }
         }
-        else
-        {
-            mat_.derived().resize(cols, rows);
-            Derived::Index stride = mat_.derived().outerStride();
-            if (stride == cols)
-            {
-                internal::read_data(dataset, mat_.derived().data(), *datatype);
-            }
-            else
-            {
-                // unnatural stride; read into a temp and copy it
-                Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> temp(cols, rows);
-                internal::read_data(dataset, temp.data(), *datatype);
 
-                // TODO: this transposeIsPlace causes compilation error when loading into a fixed
-                // size matrix. Since it is better to be more general than fast, we need to code a
-                // different solution. 
-                temp.transposeInPlace();
-                mat_ = temp;
-            }
-            mat_.transposeInPlace();
+        if (!written)
+        {
+            // input is col major or has unnatural stride; read into a temp and copy it
+            Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> temp(rows, cols);
+            internal::read_data(dataset, temp.data(), *datatype);
+            mat_ = temp;
+            written = true;
         }
     }
 }

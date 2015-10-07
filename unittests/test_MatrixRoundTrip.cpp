@@ -289,18 +289,10 @@ TEST(MatrixRoundTrip, DoubleFixedCol) {
     }
     {
         H5::H5File file("test_MatrixRoundTrip_DoubleFixedRow.h5", H5F_ACC_RDONLY);
-#if 0
         // this won't compile because load has a transposeInPlace, which is not allowed for
         // fixed size matrices. 
         EigenHDF5::load(file, "double_matrix", fmat2);
         EigenHDF5::load(file, "matrix_block", fmatblock2);
-#else
-        // read into a dynamic sized matrix and then copy into fixed size
-        EigenHDF5::load(file, "double_matrix", dmat2);
-        EigenHDF5::load(file, "matrix_block", dmatblock2);
-        fmat2 = dmat2;
-        fmatblock2 = dmatblock2;
-#endif
     }
     ASSERT_PRED_FORMAT2(assert_same, mat, fmat2);
     ASSERT_PRED_FORMAT2(assert_same, matblock, fmatblock2);
