@@ -217,72 +217,90 @@ namespace internal
         return H5::DataSpace(dimensions_size, dimensions);
     }
 
-    // I suspect there is a more optimal way to set up the hyperslab that would avoid
-    // copying row by row, but I do not know what it is right now. 
     template <typename Derived>
-    bool write_mat_by_rows(const Eigen::EigenBase<Derived> &mat, 
-        const H5::DataType * const datatype,
-        H5::DataSet *dataset,
-        const H5::DataSpace* dataspace)
-    {
-        Derived::Index mstride = mat.derived().outerStride();
-
-        // slab params for the file data
-        hsize_t fstride[2] = { 1, mat.cols() };
-        hsize_t count[2] = { 1, 1 };
-        hsize_t block[2] = { 1, mat.cols() };
-
-        // slab params for the memory data
-        hsize_t mdim[2] = { 1, mat.cols() };
-        H5::DataSpace mspace(2, mdim);
-
-        // write each row of mat as a slab
-        for (int i = 0; i < mat.rows(); i++)
-        {
-            hsize_t start[2] = { i, 0 };
-            dataspace->selectHyperslab(H5S_SELECT_SET, count, start, fstride, block);
-            dataset->write(mat.derived().data() + i*mstride, *datatype, mspace, *dataspace);
-        }
-        return true;
-    }
-
-    template <typename Derived>
-    bool write_col_mat(const Eigen::EigenBase<Derived> &mat,
+    bool write_rowmat(const Eigen::EigenBase<Derived> &mat,
         const H5::DataType * const datatype,
         H5::DataSet *dataset,
         const H5::DataSpace* dspace)
     {
+        if (mat.derived().innerStride() != 1)
+        {
+            // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
+            // could by using the inner stride as the first element of mstride below. But I do
+            // not have a test case to try it out, so just return false for now.) 
+            return false;
+        }
+
+        Derived::Index rows = mat.rows();
+        Derived::Index cols = mat.cols();
+        Derived::Index mat_stride = mat.derived().outerStride();
+
+        // slab params for the file data
+        hsize_t fstride[2] = { 1, cols };
+
+        // slab params for the memory data
+        hsize_t mstride[2] = { 1, mat_stride };
+
+        // slab params for both file and memory data
+        hsize_t count[2] = { 1, 1 };
+        hsize_t block[2] = { rows, cols };
+        hsize_t start[2] = { 0, 0 };
+
+        // memory dataspace
+        hsize_t mdim[2] = { rows, mat_stride };
+        H5::DataSpace mspace(2, mdim);
+
+        dspace->selectHyperslab(H5S_SELECT_SET, count, start, fstride, block);
+        mspace.selectHyperslab(H5S_SELECT_SET, count, start, mstride, block);
+        dataset->write(mat.derived().data(), *datatype, mspace, *dspace);
+
+        return true;
+    }
+
+    template <typename Derived>
+    bool write_colmat(const Eigen::EigenBase<Derived> &mat,
+        const H5::DataType * const datatype,
+        H5::DataSet *dataset,
+        const H5::DataSpace* dspace)
+    {
+        if (mat.derived().innerStride() != 1)
+        {
+            // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
+            // could by using the inner stride as the first element of mstride below. But I do
+            // not have a test case to try it out, so just return false for now.) 
+            return false;
+        }
+
         bool written = false;
         Derived::Index rows = mat.rows();
         Derived::Index cols = mat.cols();
-
         Derived::Index stride = mat.derived().outerStride();
-        if (rows == stride)
+
+        // slab params for the file data
+        hsize_t fstride[2] = { 1, cols };
+        hsize_t fcount[2] = { 1, 1 };
+        hsize_t fblock[2] = { 1, cols };
+
+        // slab params for the memory data
+        hsize_t mstride[2] = { stride, 1 };
+        hsize_t mcount[2] = { 1, 1 };
+        hsize_t mblock[2] = { cols, 1 };
+
+        // memory dataspace
+        hsize_t mdim[2] = { cols, stride };
+        H5::DataSpace mspace(2, mdim);
+
+        // transpose the column major data in memory to the row major data in the file by
+        // writing one row slab at a time. 
+        for (int i = 0; i < rows; i++)
         {
-            // slab params for the file data
-            hsize_t fstride[2] = { 1, 1 };
-            hsize_t fcount[2] = { 1, 1 };
-            hsize_t fblock[2] = { 1, cols };
-
-            // slab params for the memory data
-            hsize_t mdim[2] = { cols, rows };
-            H5::DataSpace mspace(2, mdim);
-            hsize_t mstride[2] = { rows, 1 };
-            hsize_t mcount[2] = { 1, 1 };
-            hsize_t mblock[2] = { cols, 1 };
-
-            // write each row of mat as a slab
-            for (int i = 0; i < rows; i++)
-            {
-                hsize_t fstart[2] = { i, 0 };
-                hsize_t mstart[2] = { 0, i };
-                dspace->selectHyperslab(H5S_SELECT_SET, fcount, fstart, fstride, fblock);
-                mspace.selectHyperslab(H5S_SELECT_SET, mcount, mstart, mstride, mblock);
-                dataset->write(mat.derived().data(), *datatype, mspace, *dspace);
-            }
-            written = true;
+            hsize_t fstart[2] = { i, 0 };
+            hsize_t mstart[2] = { 0, i };
+            dspace->selectHyperslab(H5S_SELECT_SET, fcount, fstart, fstride, fblock);
+            mspace.selectHyperslab(H5S_SELECT_SET, mcount, mstart, mstride, mblock);
+            dataset->write(mat.derived().data(), *datatype, mspace, *dspace);
         }
-        return written;
+        return true;
     }
 }
 
@@ -314,28 +332,11 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
     bool written = false;  // flag will be true when the data has been written
     if (mat.derived().Flags & Eigen::RowMajor)
     {
-        // the matrix is stored in a row major order; see if it is contiguous
-        if (mat.derived().outerStride() == mat.cols())
-        {
-            // the stride between rows is the number of columns means there is no padding between
-            // rows, so the data is contiguous and we can write the data directly from memory
-            // without copying. 
-            dataset.write(mat.derived().data(), *datatype);
-            written = true;
-        }
-        else if (mat.derived().innerStride() == 1)
-        {
-            // inner stride == 1 is a sanity check. Only matrices made with unconventional maps
-            // would have inner stride != 1, and they will be handled below by first copying the
-            // input matrix. 
-
-            // write the matrix by rows to the dataset using the dataspace made above
-            written = internal::write_mat_by_rows(mat, datatype, &dataset, &dataspace);
-        }
+        written = internal::write_rowmat(mat, datatype, &dataset, &dataspace);
     }
     else
     {
-        written = internal::write_col_mat(mat, datatype, &dataset, &dataspace);
+        written = internal::write_colmat(mat, datatype, &dataset, &dataspace);
     }
     
     if (!written)
