@@ -220,7 +220,7 @@ namespace internal
     // I suspect there is a more optimal way to set up the hyperslab that would avoid
     // copying row by row, but I do not know what it is right now. 
     template <typename Derived>
-    void write_mat_by_rows(const Eigen::EigenBase<Derived> &mat, 
+    bool write_mat_by_rows(const Eigen::EigenBase<Derived> &mat, 
         const H5::DataType * const datatype,
         H5::DataSet *dataset,
         const H5::DataSpace* dataspace)
@@ -243,6 +243,46 @@ namespace internal
             dataspace->selectHyperslab(H5S_SELECT_SET, count, start, fstride, block);
             dataset->write(mat.derived().data() + i*mstride, *datatype, mspace, *dataspace);
         }
+        return true;
+    }
+
+    template <typename Derived>
+    bool write_col_mat(const Eigen::EigenBase<Derived> &mat,
+        const H5::DataType * const datatype,
+        H5::DataSet *dataset,
+        const H5::DataSpace* dspace)
+    {
+        bool written = false;
+        Derived::Index rows = mat.rows();
+        Derived::Index cols = mat.cols();
+
+        Derived::Index stride = mat.derived().outerStride();
+        if (rows == stride)
+        {
+            // slab params for the file data
+            hsize_t fstride[2] = { 1, 1 };
+            hsize_t fcount[2] = { 1, 1 };
+            hsize_t fblock[2] = { 1, cols };
+
+            // slab params for the memory data
+            hsize_t mdim[2] = { cols, rows };
+            H5::DataSpace mspace(2, mdim);
+            hsize_t mstride[2] = { rows, 1 };
+            hsize_t mcount[2] = { 1, 1 };
+            hsize_t mblock[2] = { cols, 1 };
+
+            // write each row of mat as a slab
+            for (int i = 0; i < rows; i++)
+            {
+                hsize_t fstart[2] = { i, 0 };
+                hsize_t mstart[2] = { 0, i };
+                dspace->selectHyperslab(H5S_SELECT_SET, fcount, fstart, fstride, fblock);
+                mspace.selectHyperslab(H5S_SELECT_SET, mcount, mstart, mstride, mblock);
+                dataset->write(mat.derived().data(), *datatype, mspace, *dspace);
+            }
+            written = true;
+        }
+        return written;
     }
 }
 
@@ -290,9 +330,12 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
             // input matrix. 
 
             // write the matrix by rows to the dataset using the dataspace made above
-            internal::write_mat_by_rows(mat, datatype, &dataset, &dataspace);
-            written = true;
+            written = internal::write_mat_by_rows(mat, datatype, &dataset, &dataspace);
         }
+    }
+    else
+    {
+        written = internal::write_col_mat(mat, datatype, &dataset, &dataspace);
     }
     
     if (!written)
