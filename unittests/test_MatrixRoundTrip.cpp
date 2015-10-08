@@ -8,6 +8,64 @@
 
 #include <gtest/gtest.h>
 
+namespace Eigen {
+    // C++ and/or gtest require that these two methods, which are used by calling
+    // ASSERT_PRED_FORMAT2, be in the namespace of its argument. 
+
+    // utility function to print an eigen object to an ostream; gtest will use this when
+    // it outputs a matrix used in a failed assertion. Without this function, gtest seems
+    // to dump some kind of byte representation of an eigen matrix, which is not very
+    // helpful. 
+    template <class Derived>
+    void PrintTo(const Eigen::EigenBase<Derived>& mat, ::std::ostream* os)
+    {
+        (*os) << mat.derived() << "\n";
+    }
+
+    // utility function for gtest to use to check if two eigen objects are identical.
+    // returns assertion success when they are identical; returns assertion failure along
+    // with a nicely formatted message with the matrix contents when they are not
+    // identical.
+    // 
+    // I put this function in this matrix test cpp file for a few reasons: 1) there is
+    // not already a header file to put common test code for eigen3-hdf5, and 2) because
+    // I needed it to help me debug test failures as I implemented the no copy read and
+    // write functions. I really think that providing a header for common test code
+    // should be addressed at some point, and then this function (and its companion
+    // PrintTo) should be moved there.
+    // 
+    // Usage:
+    // 
+    // ASSERT_PRED_FORMAT2(assert_same, mat, mat2); 
+    template <class DerivedExp, class DerivedAct>
+    ::testing::AssertionResult assert_same(const char* exp_expr,
+        const char* act_expr,
+        const Eigen::EigenBase<DerivedExp>& exp,
+        const Eigen::EigenBase<DerivedAct>& act)
+    {
+        if (exp.rows() == act.rows() &&
+            exp.cols() == act.cols() &&
+            exp.derived() == act.derived())
+        {
+            return ::testing::AssertionSuccess();
+        }
+
+        // if eigen did not define the == operator, you could use
+        // exp.derived().cwiseEqual(act.derived()).all();
+
+        ::testing::AssertionResult result = ::testing::AssertionFailure()
+            << "Eigen objects are not the same: ("
+            << exp_expr << ", " << act_expr << ")\n"
+            << exp_expr << ":\n"
+            << ::testing::PrintToString(exp)
+            << "\n---and\n" << act_expr << ":\n"
+            << ::testing::PrintToString(act)
+            << "\n---are not equal!\n";
+
+        return result;
+    }
+} // namespace Eigen
+
 TEST(MatrixRoundTrip, Double) {
     Eigen::MatrixXd mat(3, 4), mat2;
     mat << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
@@ -22,7 +80,7 @@ TEST(MatrixRoundTrip, Double) {
         H5::H5File file("test_MatrixRoundTrip_Double.h5", H5F_ACC_RDONLY);
         EigenHDF5::load(file, "double_matrix", mat2);
     }
-    ASSERT_EQ(mat, mat2);
+    ASSERT_PRED_FORMAT2(assert_same, mat, mat2);
 }
 
 TEST(MatrixRoundTrip, LongDouble) {
@@ -93,62 +151,6 @@ TEST(MatrixRoundTrip, ComplexDouble) {
     ASSERT_EQ(mat, mat2);
 }
 
-namespace Eigen {
-
-// utility function to print an eigen object to an ostream; gtest will use then when it
-// outputs a matrix. Without it, gtest seems to dump some kind of byte representation,
-// which is not very helpful. 
-template <class Derived>
-void PrintTo(const Eigen::EigenBase<Derived>& mat, ::std::ostream* os)
-{
-    (*os) << mat.derived() << "\n";
-}
-
-// utility function for gtest to check if two eigen objects are identical. returns
-// assertion success when they are; returns assertion failure along with a nicely
-// formatted message with the matrix contents when they are not identical. The C++ and/or
-// gtest rules requires that the method used by ASSERT_PRED_FORMAT2 be in the namespace
-// of its argument.
-// 
-// I put this function in this location of this matrix test cpp file for a few reasons:
-// 1) there is not already a header file to put common test code for eigen3-hdf5, 2)
-// because all the other tests were already passing, so they would not be helped by this
-// new assert, and 3) because I needed it to help me debug test failures for
-// DoubleSkipInternalCopyBlock (It took me a few attempts to implement EigenHDF5::save
-// for a row major block matrix with a stride that is not equal to the number of columns
-// in the original matrix.) I really think that (2, a header for common test code) should
-// be addressed at some point, and then this function (and its companion PrintTo) should be moved
-// there. 
-
-template <class DerivedExp, class DerivedAct>
-::testing::AssertionResult assert_same(const char* exp_expr,
-    const char* act_expr,
-    const Eigen::EigenBase<DerivedExp>& exp,
-    const Eigen::EigenBase<DerivedAct>& act)
-{
-    if (exp.rows() == act.rows() &&
-        exp.cols() == act.cols() &&
-        exp.derived() == act.derived())
-    {
-        return ::testing::AssertionSuccess();
-    }
-
-    // if eigen did not define the == operator, you could use
-    // exp.derived().cwiseEqual(act.derived()).all();
-
-    ::testing::AssertionResult result = ::testing::AssertionFailure()
-        << "Eigen objects are not the same: ("
-        << exp_expr << ", " << act_expr << ")\n"
-        << exp_expr << ":\n"
-        << ::testing::PrintToString(exp)
-        << "\n---and\n" << act_expr << ":\n"
-        << ::testing::PrintToString(act)
-        << "\n---are not equal!\n";
-
-    return result;
-}
-} // namespace Eigen
-
 TEST(MatrixRoundTrip, IntBlock) {
     Eigen::Matrix4i mat(Eigen::Matrix4i::Zero());
     Eigen::Matrix4i mat2(Eigen::Matrix4i::Zero());
@@ -176,12 +178,16 @@ TEST(MatrixRoundTrip, IntBlockRowMajor) {
     typedef Eigen::Matrix<int, 4, 4, Eigen::RowMajor> Matrix4RowMajor;
     Matrix4RowMajor mat(Eigen::Matrix4i::Zero());
     Matrix4RowMajor mat2(Eigen::Matrix4i::Zero());
-    mat(0, 0) = 1;
-    mat(0, 1) = 2;
-    mat(1, 0) = 3;
-    mat(1, 1) = 4;
-    mat(2, 2) = 5;
-    mat2(2, 2) = 5;
+    mat <<
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16;
+
+    mat2(0, 2) = 3; mat2(0, 3) = 4;
+    mat2(1, 2) = 7; mat2(1, 3) = 8;
+    mat2(2, 0) = 9; mat2(2, 1) = 10; mat2(2, 2) = 11; mat2(2, 3) = 12;
+    mat2(3, 0) = 13; mat2(3, 1) = 14; mat2(3, 2) = 15; mat2(3, 3) = 16;
 #ifdef LOGGING
     std::cout << mat << std::endl;
 #endif
@@ -299,4 +305,6 @@ TEST(MatrixRoundTrip, DoubleFixedCol) {
 }
 
 // To run all of the EigenHDF5 tests use:
-// -- --gtest_filter=Attribute*:Matrix*:Vector*
+/*
+-- --gtest_filter=Attribute*:Matrix*:Vector* --gtest_catch_exceptions=0 --gtest_break_on_failure=1
+*/
