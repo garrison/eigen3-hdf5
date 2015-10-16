@@ -216,6 +216,92 @@ namespace internal
         };
         return H5::DataSpace(dimensions_size, dimensions);
     }
+
+    template <typename Derived>
+    bool write_rowmat(const Eigen::EigenBase<Derived> &mat,
+        const H5::DataType * const datatype,
+        H5::DataSet *dataset,
+        const H5::DataSpace* dspace)
+    {
+        if (mat.derived().innerStride() != 1)
+        {
+            // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
+            // could by using the inner stride as the first element of mstride below. But I do
+            // not have a test case to try it out, so just return false for now.) 
+            return false;
+        }
+
+        Derived::Index rows = mat.rows();
+        Derived::Index cols = mat.cols();
+        Derived::Index mat_stride = mat.derived().outerStride();
+
+        // slab params for the file data
+        hsize_t fstride[2] = { 1, cols };
+
+        // slab params for the memory data
+        hsize_t mstride[2] = { 1, mat_stride };
+
+        // slab params for both file and memory data
+        hsize_t count[2] = { 1, 1 };
+        hsize_t block[2] = { rows, cols };
+        hsize_t start[2] = { 0, 0 };
+
+        // memory dataspace
+        hsize_t mdim[2] = { rows, mat_stride };
+        H5::DataSpace mspace(2, mdim);
+
+        dspace->selectHyperslab(H5S_SELECT_SET, count, start, fstride, block);
+        mspace.selectHyperslab(H5S_SELECT_SET, count, start, mstride, block);
+        dataset->write(mat.derived().data(), *datatype, mspace, *dspace);
+
+        return true;
+    }
+
+    template <typename Derived>
+    bool write_colmat(const Eigen::EigenBase<Derived> &mat,
+        const H5::DataType * const datatype,
+        H5::DataSet *dataset,
+        const H5::DataSpace* dspace)
+    {
+        if (mat.derived().innerStride() != 1)
+        {
+            // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
+            // could by using the inner stride as the first element of mstride below. But I do
+            // not have a test case to try it out, so just return false for now.) 
+            return false;
+        }
+
+        bool written = false;
+        Derived::Index rows = mat.rows();
+        Derived::Index cols = mat.cols();
+        Derived::Index stride = mat.derived().outerStride();
+
+        // slab params for the file data
+        hsize_t fstride[2] = { 1, cols };
+        hsize_t fcount[2] = { 1, 1 };
+        hsize_t fblock[2] = { 1, cols };
+
+        // slab params for the memory data
+        hsize_t mstride[2] = { stride, 1 };
+        hsize_t mcount[2] = { 1, 1 };
+        hsize_t mblock[2] = { cols, 1 };
+
+        // memory dataspace
+        hsize_t mdim[2] = { cols, stride };
+        H5::DataSpace mspace(2, mdim);
+
+        // transpose the column major data in memory to the row major data in the file by
+        // writing one row slab at a time. 
+        for (int i = 0; i < rows; i++)
+        {
+            hsize_t fstart[2] = { i, 0 };
+            hsize_t mstart[2] = { 0, i };
+            dspace->selectHyperslab(H5S_SELECT_SET, fcount, fstart, fstride, fblock);
+            mspace.selectHyperslab(H5S_SELECT_SET, mcount, mstart, mstride, mblock);
+            dataset->write(mat.derived().data(), *datatype, mspace, *dspace);
+        }
+        return true;
+    }
 }
 
 template <typename T>
@@ -239,11 +325,27 @@ template <typename Derived>
 void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBase<Derived> &mat, const H5::DSetCreatPropList &plist=H5::DSetCreatPropList::DEFAULT)
 {
     typedef typename Derived::Scalar Scalar;
-    const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
-    const H5::DataSpace dataspace = internal::create_dataspace(mat);
     const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
+    const H5::DataSpace dataspace = internal::create_dataspace(mat);
     H5::DataSet dataset = h5group.createDataSet(name, *datatype, dataspace, plist);
-    dataset.write(row_major_mat.data(), *datatype);
+
+    bool written = false;  // flag will be true when the data has been written
+    if (mat.derived().Flags & Eigen::RowMajor)
+    {
+        written = internal::write_rowmat(mat, datatype, &dataset, &dataspace);
+    }
+    else
+    {
+        written = internal::write_colmat(mat, datatype, &dataset, &dataspace);
+    }
+    
+    if (!written)
+    {
+        // data has not yet been written, so there is nothing else to try but copy the input
+        // matrix to a row major matrix and write it. 
+        const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
+        dataset.write(row_major_mat.data(), *datatype);
+    }
 }
 
 template <typename Derived>
@@ -274,6 +376,61 @@ namespace internal
     {
         dataset.read(datatype, data);
     }
+    
+    template <typename Derived>
+    bool read_colmat(Eigen::EigenBase<Derived>* mat,
+        const H5::DataType * const datatype,
+        const H5::DataSet &dataset)
+    {
+        if (mat->derived().innerStride() != 1)
+        {
+            // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
+            // could by using the inner stride as the first element of mstride below. But I do
+            // not have a test case to try it out, so just return false for now.) 
+            return false;
+        }
+
+        Derived::Index rows = mat->rows();
+        Derived::Index cols = mat->cols();
+        Derived::Index stride = mat->derived().outerStride();
+        if (stride != rows)
+        {
+            // this function does not (yet) read into a mat that has a different stride than the
+            // dataset. 
+            return false;
+        }
+
+
+        // slab params for the file data
+        hsize_t fstride[2] = { 1, cols };
+        hsize_t fcount[2] = { 1, 1 };
+        hsize_t fblock[2] = { 1, cols };
+
+        // file dataspace
+        hsize_t fdim[2] = { rows, cols };
+        H5::DataSpace fspace(2, fdim);
+
+        // slab params for the memory data
+        hsize_t mstride[2] = { stride, 1 };
+        hsize_t mcount[2] = { 1, 1 };
+        hsize_t mblock[2] = { cols, 1 };
+
+        // memory dataspace
+        hsize_t mdim[2] = { cols, stride };
+        H5::DataSpace mspace(2, mdim);
+
+        // transpose the column major data in memory to the row major data in the file by
+        // writing one row slab at a time. 
+        for (int i = 0; i < rows; i++)
+        {
+            hsize_t fstart[2] = { i, 0 };
+            hsize_t mstart[2] = { 0, i };
+            fspace.selectHyperslab(H5S_SELECT_SET, fcount, fstart, fstride, fblock);
+            mspace.selectHyperslab(H5S_SELECT_SET, mcount, mstart, mstride, mblock);
+            dataset.read(mat->derived().data(), *datatype, mspace, fspace);
+        }
+        return true;
+    }
 
     template <typename Derived, typename DataSet>
     void _load (const DataSet &dataset, const Eigen::DenseBase<Derived> &mat)
@@ -290,15 +447,40 @@ namespace internal
         }
         dataspace.getSimpleExtentDims(dimensions);
         const hsize_t rows = dimensions[0], cols = dimensions[1];
-        std::vector<Scalar> data(rows * cols);
         const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
-        internal::read_data(dataset, data.data(), *datatype);
-        // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
         Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
         mat_.derived().resize(rows, cols);
-        mat_ = Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(data.data(), rows, cols);
-    }
+        bool written = false;
+        if (mat.Flags & Eigen::RowMajor || dimensions[0] == 1 || dimensions[1] == 1)
+        {
+            // mat is already row major
+            Derived::Index stride = mat_.derived().outerStride();
+            if (stride == cols || (stride == rows && cols == 1))
+            {
+                // mat has natural stride, so read directly into its data block
+                read_data(dataset, mat_.derived().data(), *datatype);
+                written = true;
+            }
+        }
+        else 
+        {
+            // colmajor flag is 0 so the assert needs to check that mat is not rowmajor. 
+            assert(!(mat.Flags & Eigen::RowMajor));
 
+            written = read_colmat(&mat_, datatype, dataset);
+        }
+
+        if (!written)
+        {
+            // dataset has not been loaded directly into mat_, so as a last resort read it into a
+            // temp and copy it to mat_. (Should only need to do this when the mat_ to be loaded
+            // into has an unnatural stride.) 
+            Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> temp(rows, cols);
+            internal::read_data(dataset, temp.data(), *datatype);
+            mat_ = temp;
+            written = true;
+        }
+    }
 }
 
 template <typename Derived>
