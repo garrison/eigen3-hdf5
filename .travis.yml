@@ -1,0 +1,11 @@
+language: cpp
+compiler:
+  - gcc
+  - clang
+os:
+  - linux
+before_install:
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get update && sudo apt-get install -y premake4 libeigen3-dev; fi
+script:
+  - export INCLUDES="-I/home/garrison/eigen3 $INCLUDES"
+  - cd unittests && premake4 --os=linux gmake && make && ./eigen3-hdf5-tests
