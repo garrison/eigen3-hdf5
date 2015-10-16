@@ -467,7 +467,7 @@ namespace internal
             // colmajor flag is 0 so the assert needs to check that mat is not rowmajor. 
             assert(!(mat.Flags & Eigen::RowMajor));
 
-            written = read_colmat(&mat_, datatype, dataset);
+            //written = read_colmat(&mat_, datatype, dataset);
         }
 
         if (!written)
