@@ -14,11 +14,11 @@ TEST(SparseMatrix, Double) {
     mat.insert(0, 1) = 2.7;
     mat.insert(2, 0) = 82;
     {
-        H5::H5File file("/tmp/test_SparseMatrix_Double.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_SparseMatrix_Double.h5", H5F_ACC_TRUNC);
         EigenHDF5::save_sparse(file, "mat", mat);
     }
     {
-        H5::H5File file("/tmp/test_SparseMatrix_Double.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_SparseMatrix_Double.h5", H5F_ACC_RDONLY);
         EigenHDF5::load_sparse(file, "mat", mat2);
     }
 #ifdef LOGGING
@@ -32,11 +32,11 @@ TEST(SparseMatrix, Complex) {
     mat.insert(0, 1) = std::complex<double>(2, 4.5);
     mat.insert(1, 2) = std::complex<double>(82, 1);
     {
-        H5::H5File file("/tmp/test_SparseMatrix_Complex.h5", H5F_ACC_TRUNC);
+        H5::H5File file("test_SparseMatrix_Complex.h5", H5F_ACC_TRUNC);
         EigenHDF5::save_sparse(file, "mat", mat);
     }
     {
-        H5::H5File file("/tmp/test_SparseMatrix_Complex.h5", H5F_ACC_RDONLY);
+        H5::H5File file("test_SparseMatrix_Complex.h5", H5F_ACC_RDONLY);
         EigenHDF5::load_sparse(file, "mat", mat2);
     }
 #ifdef LOGGING

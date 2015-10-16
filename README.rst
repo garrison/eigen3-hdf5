@@ -53,8 +53,8 @@ I am using `premake4 <http://industriousone.com/premake>`_ and
 `googletest <https://code.google.com/p/googletest/>`_ because I am
 familiar with them.
 
-The unit tests currently write to specific files in /tmp.  This should
-change, eventually.
+The unit tests currently write to specific files in the current
+directory.  This could change, eventually.
 
 License
 -------
