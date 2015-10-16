@@ -231,9 +231,9 @@ namespace internal
             return false;
         }
 
-        Derived::Index rows = mat.rows();
-        Derived::Index cols = mat.cols();
-        Derived::Index mat_stride = mat.derived().outerStride();
+        typename Derived::Index rows = mat.rows();
+        typename Derived::Index cols = mat.cols();
+        typename Derived::Index mat_stride = mat.derived().outerStride();
 
         // slab params for the file data
         hsize_t fstride[2] = { 1, cols };
@@ -272,9 +272,9 @@ namespace internal
         }
 
         bool written = false;
-        Derived::Index rows = mat.rows();
-        Derived::Index cols = mat.cols();
-        Derived::Index stride = mat.derived().outerStride();
+        typename Derived::Index rows = mat.rows();
+        typename Derived::Index cols = mat.cols();
+        typename Derived::Index stride = mat.derived().outerStride();
 
         // slab params for the file data
         hsize_t fstride[2] = { 1, cols };
@@ -390,9 +390,9 @@ namespace internal
             return false;
         }
 
-        Derived::Index rows = mat->rows();
-        Derived::Index cols = mat->cols();
-        Derived::Index stride = mat->derived().outerStride();
+        typename Derived::Index rows = mat->rows();
+        typename Derived::Index cols = mat->cols();
+        typename Derived::Index stride = mat->derived().outerStride();
         if (stride != rows)
         {
             // this function does not (yet) read into a mat that has a different stride than the
@@ -454,7 +454,7 @@ namespace internal
         if (mat.Flags & Eigen::RowMajor || dimensions[0] == 1 || dimensions[1] == 1)
         {
             // mat is already row major
-            Derived::Index stride = mat_.derived().outerStride();
+            typename Derived::Index stride = mat_.derived().outerStride();
             if (stride == cols || (stride == rows && cols == 1))
             {
                 // mat has natural stride, so read directly into its data block
