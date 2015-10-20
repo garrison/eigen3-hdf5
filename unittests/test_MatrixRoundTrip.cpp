@@ -303,8 +303,3 @@ TEST(MatrixRoundTrip, DoubleFixedCol) {
     ASSERT_PRED_FORMAT2(assert_same, mat, fmat2);
     ASSERT_PRED_FORMAT2(assert_same, matblock, fmatblock2);
 }
-
-// To run all of the EigenHDF5 tests use:
-/*
--- --gtest_filter=Attribute*:Matrix*:Vector* --gtest_catch_exceptions=0 --gtest_break_on_failure=1
-*/
