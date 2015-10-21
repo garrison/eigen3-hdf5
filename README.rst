@@ -59,6 +59,28 @@ familiar with them.
 The unit tests currently write to specific files in the current
 directory.  This could change, eventually.
 
+Building the unit tests with cmake is new and not yet well tested. If
+you want to try building the unit tests with cmake, you will need to
+prebuild the fused source of gtest. For example on Linux where Eigen
+is installed in ``/opt/pkg/eigen`` and gtest is installed in
+``/opt/pkg/gtest`` with a subdirectory ``include_fused`` and libraries
+in ``build/libgtest_main.a`` and ``build/libgtest.a``, the following
+cmake steps should work.
+
+::
+
+    cd to_your_clone_of_eigen3-hdf5
+    mkdir build
+    cd build
+    cmake -DCMAKE_PREFIX_PATH=/opt/pkg/eigen \
+          -Dgtest_INCLUDE_DIR=/opt/pkg/gtest/include_fused \
+          -Dgtest_LIBRARIES=/opt/pkg/gtest/build/libgtest_main.a;/opt/pkg/gtest/build/libgtest.a
+          ..
+    make test
+
+The cmake build has also been successfully used with Visual
+Studio 2013.
+
 License
 -------
 
