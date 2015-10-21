@@ -78,8 +78,8 @@ cmake steps should work.
           ..
     make test
 
-The cmake build has also been successfully used with Visual
-Studio 2013.
+The cmake build has been successfully used on Ubuntu 12.04 with gcc 4.8 and on
+Windows 7 with Visual Studio 2013.
 
 License
 -------
