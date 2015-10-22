@@ -231,21 +231,18 @@ namespace internal
             return false;
         }
 
-        typename Derived::Index irows = mat.rows();
-        typename Derived::Index icols = mat.cols();
-        typename Derived::Index imat_stride = mat.derived().outerStride();
-        assert(irows >= 0);
-        assert(icols >= 0);
-        assert(imat_stride >= 0);
-        hsize_t rows = irows >= 0 ? irows : 0;
-        hsize_t cols = icols >= 0 ? icols : 0;
-        hsize_t mat_stride = imat_stride >= 0 ? imat_stride : 0;
+        assert(mat.rows() >= 0);
+        assert(mat.cols() >= 0);
+        assert(mat.derived().outerStride() >= 0);
+        hsize_t rows = hsize_t(mat.rows());
+        hsize_t cols = hsize_t(mat.cols());
+        hsize_t stride = hsize_t(mat.derived().outerStride());
 
         // slab params for the file data
         hsize_t fstride[2] = { 1, cols };
 
         // slab params for the memory data
-        hsize_t mstride[2] = { 1, mat_stride };
+        hsize_t mstride[2] = { 1, stride };
 
         // slab params for both file and memory data
         hsize_t count[2] = { 1, 1 };
@@ -253,7 +250,7 @@ namespace internal
         hsize_t start[2] = { 0, 0 };
 
         // memory dataspace
-        hsize_t mdim[2] = { rows, mat_stride };
+        hsize_t mdim[2] = { rows, stride };
         H5::DataSpace mspace(2, mdim);
 
         dspace->selectHyperslab(H5S_SELECT_SET, count, start, fstride, block);
@@ -277,16 +274,13 @@ namespace internal
             return false;
         }
 
-        typename Derived::Index irows = mat.rows();
-        typename Derived::Index icols = mat.cols();
-        typename Derived::Index istride = mat.derived().outerStride();
-        assert(irows >= 0);
-        assert(icols >= 0);
-        assert(istride >= 0);
-        hsize_t rows = irows >= 0 ? irows : 0;
-        hsize_t cols = icols >= 0 ? icols : 0;
-        hsize_t stride = istride >= 0 ? istride : 0;
-
+        assert(mat.rows() >= 0);
+        assert(mat.cols() >= 0);
+        assert(mat.derived().outerStride() >= 0);
+        hsize_t rows = hsize_t(mat.rows());
+        hsize_t cols = hsize_t(mat.cols());
+        hsize_t stride = hsize_t(mat.derived().outerStride());
+        
         // slab params for the file data
         hsize_t fstride[2] = { 1, cols };
         hsize_t fcount[2] = { 1, 1 };
@@ -417,22 +411,19 @@ namespace internal
             return false;
         }
 
-        typename Derived::Index irows = mat.rows();
-        typename Derived::Index icols = mat.cols();
-        typename Derived::Index istride = mat.derived().outerStride();
-        if (istride != irows)
+        assert(mat.rows() >= 0);
+        assert(mat.cols() >= 0);
+        assert(mat.derived().outerStride() >= 0);
+        hsize_t rows = hsize_t(mat.rows());
+        hsize_t cols = hsize_t(mat.cols());
+        hsize_t stride = hsize_t(mat.derived().outerStride());
+
+        if (stride != rows)
         {
             // this function does not (yet) read into a mat that has a different stride than the
             // dataset. 
             return false;
         }
-        assert(irows >= 0);
-        assert(icols >= 0);
-        assert(istride >= 0);
-        hsize_t rows = irows >= 0 ? irows : 0;
-        hsize_t cols = icols >= 0 ? icols : 0;
-        hsize_t stride = istride >= 0 ? istride : 0;
-
 
         // slab params for the file data
         hsize_t fstride[2] = { 1, cols };
