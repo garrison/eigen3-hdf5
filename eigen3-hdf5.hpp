@@ -271,7 +271,6 @@ namespace internal
             return false;
         }
 
-        bool written = false;
         typename Derived::Index rows = mat.rows();
         typename Derived::Index cols = mat.cols();
         typename Derived::Index stride = mat.derived().outerStride();
@@ -451,10 +450,13 @@ namespace internal
         Eigen::DenseBase<Derived> &mat_ = const_cast<Eigen::DenseBase<Derived> &>(mat);
         mat_.derived().resize(rows, cols);
         bool written = false;
-        if (mat.Flags & Eigen::RowMajor || dimensions[0] == 1 || dimensions[1] == 1)
+        bool isRowMajor = mat.Flags & Eigen::RowMajor;
+        if (isRowMajor || dimensions[0] == 1 || dimensions[1] == 1)
         {
             // mat is already row major
-            typename Derived::Index stride = mat_.derived().outerStride();
+            typename Derived::Index istride = mat_.derived().outerStride();
+            assert(istride >= 0);
+            hsize_t stride = istride >= 0 ? istride : 0;
             if (stride == cols || (stride == rows && cols == 1))
             {
                 // mat has natural stride, so read directly into its data block
