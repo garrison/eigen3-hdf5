@@ -309,6 +309,7 @@ namespace internal
     }
 }
 
+#if H5_VERSION_GE(1,8,12)
 template <typename T>
 void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name, const T &value)
 {
@@ -317,12 +318,15 @@ void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name
     H5::Attribute att = h5obj.createAttribute(name, *datatype, dataspace);
     att.write(*datatype, &value);
 }
+#endif
 
+#if H5_VERSION_GE(1,8,12)
 template <>
 inline void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name, const std::string &value)
 {
     save_scalar_attribute(h5obj, name, value.c_str());
 }
+#endif
 
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
 
@@ -353,6 +357,7 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
     }
 }
 
+#if H5_VERSION_GE(1,8,12)
 template <typename Derived>
 void save_attribute (const H5::H5Location &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
 {
@@ -363,6 +368,7 @@ void save_attribute (const H5::H5Location &h5obj, const std::string &name, const
     H5::Attribute dataset = h5obj.createAttribute(name, *datatype, dataspace);
     dataset.write(*datatype, row_major_mat.data());
 }
+#endif
 
 namespace internal
 {
@@ -517,12 +523,14 @@ void load (const H5::CommonFG &h5group, const std::string &name, const Eigen::De
     internal::_load(dataset, mat);
 }
 
+#if H5_VERSION_GE(1,8,12)
 template <typename Derived>
 void load_attribute (const H5::H5Location &h5obj, const std::string &name, const Eigen::DenseBase<Derived> &mat)
 {
     const H5::Attribute dataset = h5obj.openAttribute(name);
     internal::_load(dataset, mat);
 }
+#endif
 
 } // namespace EigenHDF5
 
