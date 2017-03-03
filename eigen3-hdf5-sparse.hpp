@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <eigen3-hdf5.hpp>
-#include <Eigen/Sparse>
+#include "Eigen/SparseCore"
 
 namespace EigenHDF5
 {

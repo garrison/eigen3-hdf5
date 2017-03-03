@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include <Eigen/Dense>
-#include <Eigen/Sparse>
+#include <Eigen/SparseCore>
 #include <H5Cpp.h>
 
 #include "eigen3-hdf5-sparse.hpp"
