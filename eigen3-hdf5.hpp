@@ -10,7 +10,16 @@
 
 //#include <hdf5.h>
 #include <H5Cpp.h>
+#include <H5public.h>
 #include <Eigen/Dense>
+
+#if H5_VERSION_LE(1,10,0)
+#define Eigen3Hdf5_H5Location H5::H5Location
+#define Eigen3Hdf5_H5CommonFG H5::CommonFG
+#else
+#define Eigen3Hdf5_H5Location H5::H5Object
+#define Eigen3Hdf5_H5CommonFG H5::H5Object
+#endif
 
 namespace EigenHDF5
 {
@@ -227,7 +236,7 @@ namespace internal
         {
             // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
             // could by using the inner stride as the first element of mstride below. But I do
-            // not have a test case to try it out, so just return false for now.) 
+            // not have a test case to try it out, so just return false for now.)
             return false;
         }
 
@@ -270,7 +279,7 @@ namespace internal
         {
             // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
             // could by using the inner stride as the first element of mstride below. But I do
-            // not have a test case to try it out, so just return false for now.) 
+            // not have a test case to try it out, so just return false for now.)
             return false;
         }
 
@@ -280,7 +289,7 @@ namespace internal
         hsize_t rows = hsize_t(mat.rows());
         hsize_t cols = hsize_t(mat.cols());
         hsize_t stride = hsize_t(mat.derived().outerStride());
-        
+
         // slab params for the file data
         hsize_t fstride[2] = { 1, cols };
         hsize_t fcount[2] = { 1, 1 };
@@ -296,7 +305,7 @@ namespace internal
         H5::DataSpace mspace(2, mdim);
 
         // transpose the column major data in memory to the row major data in the file by
-        // writing one row slab at a time. 
+        // writing one row slab at a time.
         for (hsize_t i = 0; i < rows; i++)
         {
             hsize_t fstart[2] = { i, 0 };
@@ -310,7 +319,7 @@ namespace internal
 }
 
 template <typename T>
-void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name, const T &value)
+void save_scalar_attribute (const H5::H5Object &h5obj, const std::string &name, const T &value)
 {
     const H5::DataType * const datatype = DatatypeSpecialization<T>::get();
     H5::DataSpace dataspace(H5S_SCALAR);
@@ -319,7 +328,7 @@ void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name
 }
 
 template <>
-inline void save_scalar_attribute (const H5::H5Location &h5obj, const std::string &name, const std::string &value)
+inline void save_scalar_attribute (const Eigen3Hdf5_H5Location &h5obj, const std::string &name, const std::string &value)
 {
     save_scalar_attribute(h5obj, name, value.c_str());
 }
@@ -327,7 +336,7 @@ inline void save_scalar_attribute (const H5::H5Location &h5obj, const std::strin
 // see http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html
 
 template <typename Derived>
-void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBase<Derived> &mat, const H5::DSetCreatPropList &plist=H5::DSetCreatPropList::DEFAULT)
+void save (Eigen3Hdf5_H5CommonFG &h5group, const std::string &name, const Eigen::EigenBase<Derived> &mat, const H5::DSetCreatPropList &plist=H5::DSetCreatPropList::DEFAULT)
 {
     typedef typename Derived::Scalar Scalar;
     const H5::DataType * const datatype = DatatypeSpecialization<Scalar>::get();
@@ -343,18 +352,18 @@ void save (H5::CommonFG &h5group, const std::string &name, const Eigen::EigenBas
     {
         written = internal::write_colmat(mat, datatype, &dataset, &dataspace);
     }
-    
+
     if (!written)
     {
         // data has not yet been written, so there is nothing else to try but copy the input
-        // matrix to a row major matrix and write it. 
+        // matrix to a row major matrix and write it.
         const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
         dataset.write(row_major_mat.data(), *datatype);
     }
 }
 
 template <typename Derived>
-void save_attribute (const H5::H5Location &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
+void save_attribute (const Eigen3Hdf5_H5Location &h5obj, const std::string &name, const Eigen::EigenBase<Derived> &mat)
 {
     typedef typename Derived::Scalar Scalar;
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> row_major_mat(mat);
@@ -381,10 +390,10 @@ namespace internal
     {
         dataset.read(datatype, data);
     }
-    
+
     // read a column major attribute; I do not know if there is an hdf routine to read an
     // attribute hyperslab, so I take the lazy way out: just read the conventional hdf
-    // row major data and let eigen copy it into mat. 
+    // row major data and let eigen copy it into mat.
     template <typename Derived>
     bool read_colmat(const Eigen::DenseBase<Derived> &mat,
         const H5::DataType * const datatype,
@@ -407,7 +416,7 @@ namespace internal
         {
             // inner stride != 1 is an edge case this function does not (yet) handle. (I think it
             // could by using the inner stride as the first element of mstride below. But I do
-            // not have a test case to try it out, so just return false for now.) 
+            // not have a test case to try it out, so just return false for now.)
             return false;
         }
 
@@ -421,7 +430,7 @@ namespace internal
         if (stride != rows)
         {
             // this function does not (yet) read into a mat that has a different stride than the
-            // dataset. 
+            // dataset.
             return false;
         }
 
@@ -444,7 +453,7 @@ namespace internal
         H5::DataSpace mspace(2, mdim);
 
         // transpose the column major data in memory to the row major data in the file by
-        // writing one row slab at a time. 
+        // writing one row slab at a time.
         for (hsize_t i = 0; i < rows; i++)
         {
             hsize_t fstart[2] = { i, 0 };
@@ -489,9 +498,9 @@ namespace internal
                 written = true;
             }
         }
-        else 
+        else
         {
-            // colmajor flag is 0 so the assert needs to check that mat is not rowmajor. 
+            // colmajor flag is 0 so the assert needs to check that mat is not rowmajor.
             assert(!(mat.Flags & Eigen::RowMajor));
 
             written = read_colmat(mat_, datatype, dataset);
@@ -501,7 +510,7 @@ namespace internal
         {
             // dataset has not been loaded directly into mat_, so as a last resort read it into a
             // temp and copy it to mat_. (Should only need to do this when the mat_ to be loaded
-            // into has an unnatural stride.) 
+            // into has an unnatural stride.)
             Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> temp(rows, cols);
             internal::read_data(dataset, temp.data(), *datatype);
             mat_ = temp;
@@ -511,14 +520,14 @@ namespace internal
 }
 
 template <typename Derived>
-void load (const H5::CommonFG &h5group, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+void load (const Eigen3Hdf5_H5CommonFG &h5group, const std::string &name, const Eigen::DenseBase<Derived> &mat)
 {
     const H5::DataSet dataset = h5group.openDataSet(name);
     internal::_load(dataset, mat);
 }
 
 template <typename Derived>
-void load_attribute (const H5::H5Location &h5obj, const std::string &name, const Eigen::DenseBase<Derived> &mat)
+void load_attribute (const Eigen3Hdf5_H5Location &h5obj, const std::string &name, const Eigen::DenseBase<Derived> &mat)
 {
     const H5::Attribute dataset = h5obj.openAttribute(name);
     internal::_load(dataset, mat);
