@@ -7,6 +7,6 @@ compiler:
 os:
   - linux
 before_install:
-  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get update && sudo apt-get install -y premake4 libeigen3-dev libhdf5-dev libgtest-dev && sed -i -e 's/\"hdf5\"/\"hdf5_serial\"/g' unittests/premake4.lua; fi
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo sed -i -e 's/trusty/xenial/g' /etc/apt/sources.list && sudo apt-get update && sudo apt-get install -y premake4 libeigen3-dev libhdf5-dev libgtest-dev && sed -i -e 's/\"hdf5\"/\"hdf5_serial\"/g' unittests/premake4.lua; fi
 script:
   - export INCLUDES="-I/usr/include/eigen3 -I/usr/include/hdf5/serial $INCLUDES" && cd unittests && premake4 --os=linux gmake && make verbose=true && ./eigen3-hdf5-tests
