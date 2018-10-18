@@ -9,15 +9,15 @@
 #include <H5public.h>
 
 #if H5_VERSION_LE(1,10,0)
-typedef  H5::H5Location Eigen3Hdf5_H5Location;
-typedef  H5::CommonFG Eigen3Hdf5_H5CommonFG;
-// #define Eigen3Hdf5_H5Location H5::H5Location
-// #define Eigen3Hdf5_H5CommonFG H5::CommonFG
+// typedef  H5::H5Location Eigen3Hdf5_H5Location;
+// typedef  H5::CommonFG Eigen3Hdf5_H5CommonFG;
+#define Eigen3Hdf5_H5Location H5::H5Location
+#define Eigen3Hdf5_H5CommonFG H5::CommonFG
 #else
-typedef H5::H5Object Eigen3Hdf5_H5Location;
-typedef H5::H5Object Eigen3Hdf5_H5CommonFG;
-// #define Eigen3Hdf5_H5Location H5::H5Object
-// #define Eigen3Hdf5_H5CommonFG H5::H5Object
+// typedef H5::H5Object Eigen3Hdf5_H5Location;
+// typedef H5::H5Object Eigen3Hdf5_H5CommonFG;
+#define Eigen3Hdf5_H5Location H5::H5Object
+#define Eigen3Hdf5_H5CommonFG H5::H5Object
 #endif
 
 namespace EigenHDF5
