@@ -53,7 +53,7 @@ public:
 };
 
 template <typename SparseMatrixType>
-void save_sparse (H5::CommonFG &h5group, const std::string &name, const SparseMatrixType &mat, const H5::DSetCreatPropList &plist=H5::DSetCreatPropList::DEFAULT)
+void save_sparse (H5::H5Location &h5group, const std::string &name, const SparseMatrixType &mat, const H5::DSetCreatPropList &plist=H5::DSetCreatPropList::DEFAULT)
 {
     typedef typename SparseMatrixType::Scalar Scalar;
     // save the actual sparse matrix
