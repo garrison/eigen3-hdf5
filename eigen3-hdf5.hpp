@@ -8,19 +8,14 @@
 #include <string>
 #include <vector>
 
-//#include <hdf5.h>
 #include <H5Cpp.h>
 #include <H5public.h>
 #include <Eigen/Dense>
 
 #if H5_VERSION_LE(1,10,0)
-// typedef  H5::H5Location Eigen3Hdf5_H5Location;
-// typedef  H5::CommonFG Eigen3Hdf5_H5CommonFG;
 #define Eigen3Hdf5_H5Location H5::H5Location
 #define Eigen3Hdf5_H5CommonFG H5::CommonFG
 #else
-// typedef H5::H5Object Eigen3Hdf5_H5Location;
-// typedef H5::H5Object Eigen3Hdf5_H5CommonFG;
 #define Eigen3Hdf5_H5Location H5::H5Object
 #define Eigen3Hdf5_H5CommonFG H5::H5Object
 #endif
@@ -323,7 +318,7 @@ namespace internal
 }
 
 template <typename T>
-void save_scalar_attribute (const H5::H5Object &h5obj, const std::string &name, const T &value)
+void save_scalar_attribute (const Eigen3Hdf5_H5Location &h5obj, const std::string &name, const T &value)
 {
     const H5::DataType * const datatype = DatatypeSpecialization<T>::get();
     H5::DataSpace dataspace(H5S_SCALAR);
