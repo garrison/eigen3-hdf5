@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies
+      run: apt-get update && apt-get install -y build-essential premake4 libeigen3-dev libhdf5-dev libgtest-dev
+    - name: compile
+      working-directory: unittests
+      env:
+        INCLUDES: "-I/usr/include/eigen3 -I/usr/include/hdf5/serial"
+      run: |
+        sed -i -e 's/\"hdf5\"/\"hdf5_serial\"/g' premake4.lua
+        premake4 --os=linux gmake
+        make verbose=true
+    - name: eigen3-hdf5-tests
+      run: ./unittests/eigen3-hdf5-tests
