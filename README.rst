@@ -1,8 +1,8 @@
 eigen3-hdf5
 ===========
 
-.. image:: https://travis-ci.org/garrison/eigen3-hdf5.svg?branch=master
-    :target: https://travis-ci.org/garrison/eigen3-hdf5
+.. image:: https://github.com/garrison/eigen3-hdf5/actions/workflows/unittests.yml/badge.svg
+    :target: https://github.com/garrison/eigen3-hdf5/actions
 
 Easy serialization of C++ `Eigen <http://eigen.tuxfamily.org/>`_
 matrices using `HDF5 <http://www.hdfgroup.org/HDF5/>`_.
