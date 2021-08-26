@@ -4,3 +4,4 @@
 /unittests/*.make
 /unittests/eigen3-hdf5-tests
 /unittests/obj/
+/unittests/test_*.h5
