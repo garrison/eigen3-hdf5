@@ -17,7 +17,7 @@
 #define Eigen3Hdf5_H5CommonFG H5::CommonFG
 #else
 #define Eigen3Hdf5_H5Location H5::H5Object
-#define Eigen3Hdf5_H5CommonFG H5::H5Object
+#define Eigen3Hdf5_H5CommonFG H5::H5Location
 #endif
 
 namespace EigenHDF5
