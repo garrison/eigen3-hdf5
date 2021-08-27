@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies
-      run: sudo apt-get update && sudo apt-get install -y build-essential premake4 libeigen3-dev libhdf5-dev libgtest-dev
+      run: sudo apt-get update && sudo apt-get install -y build-essential premake4 libeigen3-dev libhdf5-dev libgtest-dev valgrind
     - name: compile
       working-directory: unittests
       env:
@@ -26,3 +26,5 @@ jobs:
         make verbose=true
     - name: eigen3-hdf5-tests
       run: ./unittests/eigen3-hdf5-tests
+    - name: valgrind
+      run: valgrind ./unittests/eigen3-hdf5-tests
