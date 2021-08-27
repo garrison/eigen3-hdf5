@@ -1,16 +1,12 @@
-name: Tests
-
+name: CI
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-20.04
-
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies

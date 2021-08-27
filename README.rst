@@ -1,7 +1,7 @@
 eigen3-hdf5
 ===========
 
-.. image:: https://github.com/garrison/eigen3-hdf5/actions/workflows/unittests.yml/badge.svg
+.. image:: https://github.com/garrison/eigen3-hdf5/actions/workflows/main.yml/badge.svg
     :target: https://github.com/garrison/eigen3-hdf5/actions
 
 Easy serialization of C++ `Eigen <http://eigen.tuxfamily.org/>`_
