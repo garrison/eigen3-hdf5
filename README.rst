@@ -59,6 +59,11 @@ familiar with them.
 The unit tests currently write to specific files in the current
 directory.  This could change, eventually.
 
+The GitHub Action can be approximated locally by installing `act
+<https://github.com/nektos/act>`_ and running::
+
+    act -P ubuntu-20.04=ghcr.io/catthehacker/ubuntu:act-20.04
+
 License
 -------
 
